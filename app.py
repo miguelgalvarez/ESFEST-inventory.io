@@ -8,7 +8,7 @@ app.config['MAIL_SERVER'] = 'smtp.office365.com'  # Replace with your SMTP serve
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'malvarez@esfestottawa.ca'
-app.config['MAIL_PASSWORD'] = '28Jun2021!'
+app.config['MAIL_PASSWORD'] = 'mail_password'
 app.config['MAIL_DEFAULT_SENDER'] = 'malvarez@esfestottawa.ca'
 
 mail = Mail(app)
@@ -24,7 +24,7 @@ def index():
 
             msg = Message('Demande de stockage', recipients=[recipient_emails])
             msg.body = f'Nouvelle commande pour {selected_item} dans la {selected_title}'
-            msg.add_recipient('jsansoucy@esfestottawa.ca')
+            msg.add_recipient('private@esfestottawa.ca')
             mail.send(msg)
 
             # Redirect after processing the form
