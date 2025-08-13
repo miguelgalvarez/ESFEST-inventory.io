@@ -68,7 +68,7 @@ def notify():
         return jsonify({'ok': True})
     except Exception as e:
         logging.exception("Email send failed")
-        return jsonify({'ok': False, 'error': str(e)}), 500
+        return jsonify({'ok': False, 'error': 'An internal error has occurred'}), 500
 
 @app.get('/healthz')
 def health():
