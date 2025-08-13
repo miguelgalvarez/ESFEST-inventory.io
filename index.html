@@ -1,54 +1,185 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Inventaire ESFEST</title>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    background-color: #f0f0f0;
-  }
-  .row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 20px;
-  }
-  label {
-    font-weight: bold;
-  }
-  select, button {
-    padding: 5px;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stock Notification</title>
+  <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css" />
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+  <style>
+    :root {
+      --surface: #ffffff;
+      --bg: #f4f4f4;
+      --primary: #0d6efd;
+      --primary-dk: #0b5ed7;
+      --muted: #6c757d;
+      --success: #198754;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: system-ui, Arial, sans-serif; background: var(--bg);
+      display: grid; place-items: center; padding: 16px;
+    }
+    .card {
+      width: min(780px, 94vw); background: var(--surface); border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.08); padding: 22px; border: 1px solid #e8e8e8;
+    }
+    h1 { margin: 0 0 14px; font-size: 22px; }
+    p.helper { margin-top: 0; color: var(--muted); font-size: 14px; }
+    form { display: grid; gap: 14px; }
+    label { font-weight: 600; }
+    select, input[type="text"] { width: 100%; padding: 10px 12px; border: 1px solid #cfd4da; border-radius: 8px; font-size: 15px; }
+    button {
+      appearance: none; border: none; background: var(--primary); color: #fff; padding: 10px 16px;
+      border-radius: 10px; font-size: 16px; cursor: pointer; font-weight: 600;
+    }
+    button:hover { background: var(--primary-dk); }
+    .tabs { display: flex; gap: 8px; margin: 6px 0 4px; border-bottom: 1px solid #eee; }
+    .tab { padding: 8px 12px; border-radius: 8px 8px 0 0; cursor: pointer; font-weight: 600; color: #555; }
+    .tab.active { background: #eef4ff; color: #0b5ed7; }
+    .tabpanes > div { display: none; }
+    .tabpanes > .active { display: block; }
+    .browse {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; margin-top: 6px;
+    }
+    .listbox { max-height: 320px; overflow: auto; border: 1px solid #e4e4e4; border-radius: 10px; }
+    .listbox input { width: 100%; border: 0; border-bottom: 1px solid #eee; border-radius: 10px 10px 0 0; }
+    .item { padding: 10px 12px; border-bottom: 1px solid #f1f1f1; cursor: pointer; }
+    .item:hover { background: #f7faff; }
+    .kicker { font-size: 12px; color: var(--muted); margin: 6px 0 0; }
+    .inline { display: flex; gap: 10px; align-items: center; }
+    .success { color: var(--success); font-weight: 600; display: none; }
+    .footer { margin-top: 8px; font-size: 12px; color: var(--muted); }
+  </style>
 </head>
 <body>
-    <form method="post" action="/">
-      <div class="row">
-        <label for="dropdown_title">Choisis une salle:</label>
-        <select id="dropdown_title" name="selected_title">
-          <option value="salle 1">Salle 1</option>
-          <option value="salle 2">Salle 2</option>
-          <option value="salle 3">Salle 3</option>
+  <div class="card">
+    <h1>Alerte de stock</h1>
+    <p class="helper">Sélectionnez une salle, puis recherchez un item manquant ou parcourez la liste complète et cliquez sur un élément pour envoyer une notification.</p>
+
+    <form id="stock-form" method="post" action="/">
+      <div>
+        <label for="room">Salle</label>
+        <select id="room" name="room" required>
+          <option value="" selected disabled>Sélectionnez une salle…</option>
+          <option value="Salle 1">Salle 1</option>
+          <option value="Salle 2">Salle 2</option>
+          <option value="Salle 3">Salle 3</option>
+          <option value="Salle 4">Salle 4</option>
+          <option value="Salle 5">Salle 5</option>
+          <option value="Salle 6">Salle 6</option>
+          <option value="Salle 7">Salle 7</option>
+          <option value="Salle 8">Salle 8</option>
+          <option value="Salle 9">Salle 9</option>
+          <option value="Salle 10">Salle 10</option>
+          <option value="Salle 11">Salle 11</option>
+          <option value="Salle 12">Salle 12</option>
+          <option value="Salle 14">Salle 14</option>
         </select>
-        
-        <label for="dropdown_option">Choisis une option:</label>
-        <select id="dropdown_option" name="selected_option">
-          <option value="gants">Gants</option>
-          <option value="masques">Masques</option>
-          <option value="piqures">Piqures</option>
-        </select>
-        
-        <button type="submit" name="submit_button" value="1">Submit</button>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" data-tab="search">Recherche</div>
+        <div class="tab" data-tab="browse">Parcourir tout</div>
+      </div>
+
+      <div class="tabpanes">
+        <div id="pane-search" class="active">
+          <label for="material">Matériel</label>
+          <input type="text" id="material" name="material" autocomplete="off" placeholder="Commencez à écrire ici..." required />
+          <div class="inline">
+            <button type="submit" name="submit_button">Envoyer la notification</button>
+            <span class="success" id="sent-ok">Envoyé !</span>
+          </div>
+        </div>
+
+        <div id="pane-browse">
+          <div class="browse">
+            <div class="listbox">
+              <input type="text" id="filter" placeholder="Filter list…" />
+              <div id="material-list"></div>
+            </div>
+            <div>
+              <div class="kicker">Astuce : Cliquer sur un élément ci-dessous enverra immédiatement une notification pour la salle sélectionnée.</div>
+              <div class="footer">Assurez-vous de sélectionner d'abord une salle.</div>
+            </div>
+          </div>
+        </div>
       </div>
     </form>
-  </body>
-  </html>
+
+  </div>
+
+  <script>
+    // --- Tabs ---
+    $(document).on('click', '.tab', function(){
+      $('.tab').removeClass('active');
+      $(this).addClass('active');
+      const t = $(this).data('tab');
+      $('#pane-search, #pane-browse').removeClass('active');
+      if (t === 'search') $('#pane-search').addClass('active');
+      else $('#pane-browse').addClass('active');
+    });
+
+    // --- Materials: fetch once from backend (single source of truth) ---
+    let MATERIALS = [];
+    function renderList(filter=''){
+      const list = $('#material-list');
+      list.empty();
+      const q = filter.trim().toLowerCase();
+      MATERIALS.filter(x => !q || x.toLowerCase().includes(q))
+               .forEach(name => list.append(`<div class="item" data-name="${name.replaceAll('"','&quot;')}">${name}</div>`));
+    }
+
+    async function loadMaterials(){
+      try {
+        const res = await fetch('/materials');
+        MATERIALS = await res.json();
+      } catch(e){
+        // Fallback to baked-in list if backend route not available
+        MATERIALS = ["Abaisse langue","Boules de coton","Tige pour les oreilles","Verre en plastique","Désinfectant pour les main","BP cuff","Carnet immunisation","Ruban à mesurer","Thermomètre (parfois au mur)","Neuropen","Marteau réflexe","Diapason","Collants pour enfant","Tip cover pour les oreilles (enfants et adultes)","Boule de coton","Pad 2x2 pour injection","Tampon d’alcool","Ruban adhésif (bandage)","band-aid","Aiguilles","Seringues","Lame à scalpel","Sterile dressing trays","Contenant d’urine","Urine collector pour enfant","Sac plastique","Condoms","Swabs","Collecteur de spécimen","PDI castille soap towelettes / tampon d’alcool","Pad bleu","Pad blanc","Pad turquoise","Serviettes sanitaires","Brosse à prélèvement cervicale","Lubrifiant","Swab pour échantillon","Thin prep PAP test collector","Speculum (S)","Rouleaux","Jaquette jetable","Ear Covers (enfants + adultes)","Q-tips","Flexible finger cast","Tasse en plastique jetables","Strep A specimen collector","Speculum (M)","Swab échantillons (gros Q-tip)","PDI soap towelettes","Prélèvements","Swab pour prélèvement","Contenant à prélèvement","Collecteurs d’urine","Bandages Alliance","Speculum (L)","Bandages Alliance (2x2)","Bandages divers","Alliance alcohol wipes","Jaquettes bleu jetables","Gants (S)","Gants (M)","Gants (L)","Désinfectant","Tip pour oreilles (adultes et enfants)","Kleenex","Bandages Alliance (4x4)","Papier pour échantillon","Gants stériles","Visières plastiques","Spéculum individuel","Taies d’oreiller jetables","Masques","Couches pour bébés","Couvre-souliers jetables","Eau stérile","Lames de scalpels","Baxedin","Fil à chirurgie","Chlorure de sodium","Kit pour enlever des agrafes","Crèmes (polysporin)","Contenant pour prélèvement (biopsie)","Xylocaine","Rasoires","Autre contenants à prélèvement"];}
+
+      // Autocomplete + List render
+      $("#material").autocomplete({ source: MATERIALS });
+      renderList();
+    }
+
+    loadMaterials();
+
+    // Filter list typing
+    $(document).on('input', '#filter', function(){
+      renderList($(this).val());
+    });
+
+    // Clicking an item in the list: send immediately for selected room
+    $(document).on('click', '.item', async function(){
+      const room = $('#room').val();
+      if(!room){ alert('Please select a room first.'); return; }
+      const name = $(this).data('name');
+      await sendStock(room, name);
+    });
+
+    // Intercept form submit to send via fetch (keeps page snappy)
+    $("#stock-form").on("submit", async function(e){
+      e.preventDefault();
+      const room = $('#room').val();
+      const name = $('#material').val();
+      await sendStock(room, name);
+    });
+
+    async function sendStock(room, material){
+      if(!material) { alert('Choose a material'); return; }
+      try {
+        const res = await fetch('/', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ room, material }) });
+        if(!res.ok) throw new Error('Request failed');
+        $('#sent-ok').stop(true,true).fadeIn(120).delay(900).fadeOut(300);
+        $('#material').val('');
+      } catch(err){
+        alert('Could not send notification. Please try again.');
+      }
+    }
+  </script>
+</body>
+</html>

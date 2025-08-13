@@ -1,36 +1,100 @@
-from flask import Flask, request, redirect, url_for, render_template
-from flask_mail import Mail, Message
+from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
+import os, smtplib, ssl, logging, json
+from email.message import EmailMessage
+from dotenv import load_dotenv
 
-app = Flask(__name__)
+load_dotenv()
 
-# Configure Flask-Mail
-app.config['MAIL_SERVER'] = 'smtp.office365.com'  # Replace with your SMTP server
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'test@test.com'
-app.config['MAIL_PASSWORD'] = 'mail_password'
-app.config['MAIL_DEFAULT_SENDER'] = 'test@test.com'
+app = Flask(__name__, static_folder='.')
+CORS(app)
 
-mail = Mail(app)
+# --- Config via env (never hardcode secrets) ---
+SMTP_HOST = os.getenv('SMTP_HOST', 'smtp.gmail.com')
+SMTP_PORT = int(os.getenv('SMTP_PORT', '587'))
+SMTP_USER = os.getenv('SMTP_USER', '')
+SMTP_PASS = os.getenv('SMTP_PASS', '')
+MAIL_TO   = os.getenv('MAIL_TO', '')   # comma-separated list
+MAIL_FROM = os.getenv('MAIL_FROM', SMTP_USER)
 
-@app.route('/', methods=['GET','POST'])
-def index():
-    if request.method == 'POST':
-        if 'submit_button' in request.form:
-            selected_item = request.form.get('selected_option')
-            selected_title = request.form.get('selected_title')  # Get the selected title
+# Materials live in one place (source of truth)
+MATERIALS = [
+    "Abaisse langue","Boules de coton","Tige pour les oreilles","Verre en plastique","Désinfectant pour les mains","BP cuff","Carnet immunisation",
+    "Ruban à mesurer","Thermomètre (parfois au mur)","Neuropen","Marteau réflexe","Diapason","Collants pour enfant","Tip cover pour les oreilles (enfants et adultes)",
+    "Boule de coton","Pad 2x2 pour injection","Tampon d’alcool","Ruban adhésif (bandage)","band-aid","Aiguilles","Seringues","Lame à scalpel","Sterile dressing trays",
+    "Contenant d’urine","Urine collector pour enfant","Sac plastique","Condoms","Swabs","Collecteur de spécimen","PDI castille soap towelettes / tampon d’alcool","Pad bleu",
+    "Pad blanc","Pad turquoise","Serviettes sanitaires","Brosse à prélèvement cervicale","Lubrifiant","Swab pour échantillon","Thin prep PAP test collector","Speculum (S)",
+    "Rouleaux","Jaquette jetable","Ear Covers (enfants + adultes)","Q-tips","Flexible finger cast","Tasse en plastique jetables","Strep A specimen collector","Speculum (M)",
+    "Swab échantillons (gros Q-tip)","PDI soap towelettes","Prélèvements","Swab pour prélèvement","Contenant à prélèvement","Collecteurs d’urine","Bandages Alliance","Speculum (L)",
+    "Bandages Alliance (2x2)","Bandages divers","Alliance alcohol wipes","Jaquettes bleu jetables","Gants (S)","Gants (M)","Gants (L)","Désinfectant","Tip pour oreilles (adultes et enfants)",
+    "Kleenex","Bandages Alliance (4x4)","Papier pour échantillon","Gants stériles","Visières plastiques","Spéculum individuel","Taies d’oreiller jetables","Masques","Couches pour bébés",
+    "Couvre-souliers jetables","Eau stérile","Lames de scalpels","Baxedin","Fil à chirurgie","Chlorure de sodium","Kit pour enlever des agrafes","Crèmes (polysporin)",
+    "Contenant pour prélèvement (biopsie)","Xylocaine","Rasoires","Autre contenants à prélèvement"
+]
 
-            recipient_emails = 'test@test.com'
+# --- Logging ---
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 
-            msg = Message('Demande de stockage', recipients=[recipient_emails])
-            msg.body = f'Nouvelle commande pour {selected_item} dans la {selected_title}'
-            msg.add_recipient('private@email.com')
-            mail.send(msg)
+@app.get('/')
+def root_get():
+    return send_from_directory('.', 'index.html')
 
-            # Redirect after processing the form
-            return redirect(url_for('index'))
-        
-    return render_template('index.html')
+@app.get('/materials')
+def get_materials():
+    return jsonify(MATERIALS)
+
+@app.post('/')
+def notify():
+    # Accept JSON or form-encoded
+    if request.is_json:
+        data = request.get_json(silent=True) or {}
+    else:
+        data = request.form.to_dict()
+
+    # Optional preshared-key header for simple protection
+    if PSK:
+        auth = request.headers.get('X-App-Key') or data.get('key')
+        if auth != PSK:
+            return jsonify({'ok': False, 'error': 'unauthorized'}), 401
+
+    room = (data.get('room') or '').strip()
+    material = (data.get('material') or '').strip()
+    if not room or not material:
+        return jsonify({'ok': False, 'error': 'room and material are required'}), 400
+
+    try:
+        send_email(room, material)
+        logging.info(f"Sent notification: room={room}, material={material}")
+        return jsonify({'ok': True})
+    except Exception as e:
+        logging.exception("Email send failed")
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+@app.get('/healthz')
+def health():
+    return jsonify({'status': 'ok'})
+
+
+def send_email(room: str, material: str):
+    if not (SMTP_USER and (SMTP_PASS or SMTP_PORT == 25) and MAIL_TO):
+        raise RuntimeError('SMTP env vars not set (SMTP_USER/SMTP_PASS/MAIL_TO)')
+
+    recipients = [x.strip() for x in MAIL_TO.split(',') if x.strip()]
+    msg = EmailMessage()
+    msg['Subject'] = f"Stock low: {material} ({room})"
+    msg['From'] = MAIL_FROM
+    msg['To'] = ', '.join(recipients)
+    msg.set_content(f"The following item is running low in {room}:\n\n  • {material}\n\nPlease restock when possible.\n")
+
+    context = ssl.create_default_context()
+    with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15) as server:
+        if SMTP_PORT != 25:
+            server.starttls(context=context)
+        if SMTP_USER:
+            server.login(SMTP_USER, SMTP_PASS)
+        server.send_message(msg)
+
 
 if __name__ == '__main__':
-    app.run()
+    # For local use. In production, prefer: gunicorn -w 2 -b 0.0.0.0:8080 app:app
+    app.run(host='0.0.0.0', port=8080)
