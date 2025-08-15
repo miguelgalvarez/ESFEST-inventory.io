@@ -51,12 +51,6 @@ def notify():
     else:
         data = request.form.to_dict()
 
-    # Optional preshared-key header for simple protection
-    if PSK:
-        auth = request.headers.get('X-App-Key') or data.get('key')
-        if auth != PSK:
-            return jsonify({'ok': False, 'error': 'unauthorized'}), 401
-
     room = (data.get('room') or '').strip()
     material = (data.get('material') or '').strip()
     if not room or not material:
