@@ -194,10 +194,10 @@
   z-index: 9999;
   left: 50%;
   bottom: 30px;
-  font-size: 14px;
+  font-size: 20px;
   transform: translateX(-50%);
 ">
-  Notification sent!
+  Courriel envoyé!
 </div>
 
 <script>
@@ -205,7 +205,7 @@ function showToast(message) {
   const toast = document.getElementById("toast");
   toast.textContent = message;
   toast.style.visibility = "visible";
-  setTimeout(() => { toast.style.visibility = "hidden"; }, 2000);
+  setTimeout(() => { toast.style.visibility = "hidden"; }, 3000);
 }
 
 // Modify your existing click event for .item
