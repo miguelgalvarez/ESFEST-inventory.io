@@ -214,7 +214,7 @@ $(document).on('click', '.item', async function(){
   if(!room){ alert('Please select a room first.'); return; }
   const name = $(this).data('name');
   await sendStock(room, name);
-  showToast(`Notification sent for "${name}"`);
+  showToast(`Courriel envoyé pour l'item: "${name}"`);
 });
 </script>
 
