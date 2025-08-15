@@ -43,6 +43,15 @@ def root_get():
 def get_materials():
     return jsonify(MATERIALS)
 
+@app.get('/healthz')
+def health():
+    return jsonify({'status': 'ok'})
+
+@app.get('/favicon.ico')
+def favicon():
+    # Avoid noisy 404s
+    return ('', 204)
+
 @app.post('/')
 def notify():
     # Accept JSON or form-encoded
@@ -64,21 +73,16 @@ def notify():
         logging.exception("Email send failed")
         return jsonify({'ok': False, 'error': str(e)}), 500
 
-@app.get('/healthz')
-def health():
-    return jsonify({'status': 'ok'})
-
-
 def send_email(room: str, material: str):
     if not (SMTP_USER and (SMTP_PASS or SMTP_PORT == 25) and MAIL_TO):
-        raise RuntimeError('SMTP env vars not set (SMTP_USER/SMTP_PASS/MAIL_TO)')
+        raise RuntimeError('Variables SMTP non définies (SMTP_USER/SMTP_PASS/MAIL_TO)')
 
     recipients = [x.strip() for x in MAIL_TO.split(',') if x.strip()]
     msg = EmailMessage()
-    msg['Subject'] = f"Stock low: {material} ({room})"
+    msg['Subject'] = f"Stock faible : {material} ({room})"
     msg['From'] = MAIL_FROM
     msg['To'] = ', '.join(recipients)
-    msg.set_content(f"The following item is running low in {room}:\n\n  • {material}\n\nPlease restock when possible.\n")
+    msg.set_content(f"L'article suivant est en rupture imminente dans {room} :\n\n  • {material}\n\nMerci de procéder au réapprovisionnement dès que possible.\n")
 
     context = ssl.create_default_context()
     with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15) as server:
@@ -88,7 +92,5 @@ def send_email(room: str, material: str):
             server.login(SMTP_USER, SMTP_PASS)
         server.send_message(msg)
 
-
 if __name__ == '__main__':
-    # For local use. In production, prefer: gunicorn -w 2 -b 0.0.0.0:8080 app:app
     app.run(host='0.0.0.0', port=8080)

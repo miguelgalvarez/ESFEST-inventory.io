@@ -181,5 +181,42 @@
       }
     }
   </script>
+  <!-- Toast container -->
+<div id="toast" style="
+  visibility: hidden;
+  min-width: 200px;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 12px;
+  position: fixed;
+  z-index: 9999;
+  left: 50%;
+  bottom: 30px;
+  font-size: 14px;
+  transform: translateX(-50%);
+">
+  Notification sent!
+</div>
+
+<script>
+function showToast(message) {
+  const toast = document.getElementById("toast");
+  toast.textContent = message;
+  toast.style.visibility = "visible";
+  setTimeout(() => { toast.style.visibility = "hidden"; }, 2000);
+}
+
+// Modify your existing click event for .item
+$(document).on('click', '.item', async function(){
+  const room = $('#room').val();
+  if(!room){ alert('Please select a room first.'); return; }
+  const name = $(this).data('name');
+  await sendStock(room, name);
+  showToast(`Notification sent for "${name}"`);
+});
+</script>
+
 </body>
 </html>
