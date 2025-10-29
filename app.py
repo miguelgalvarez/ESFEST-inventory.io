@@ -71,7 +71,7 @@ def notify():
         return jsonify({'ok': True})
     except Exception as e:
         logging.exception("Email send failed")
-        return jsonify({'ok': False, 'error': str(e)}), 500
+        return jsonify({'ok': False, 'error': 'An internal error has occurred'}), 500
 
 def send_email(room: str, material: str):
     if not (SMTP_USER and (SMTP_PASS or SMTP_PORT == 25) and MAIL_TO):
